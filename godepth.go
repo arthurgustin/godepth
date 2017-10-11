@@ -25,7 +25,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 )
 
 const usageDoc = `Calculate maximum depth of Go functions.
@@ -102,12 +101,6 @@ func analyzeFile(fname string, stats []stat) []stat {
 }
 
 func analyzeDir(dirname string, stats []stat) []stat {
-	filepath.Walk(dirname, func(path string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && strings.HasSuffix(path, ".go") {
-			stats = analyzeFile(path, stats)
-		}
-		return err
-	})
 	files, _ := filepath.Glob(filepath.Join(dirname, "*.go"))
 	for _, file := range files {
 		stats = analyzeFile(file, stats)
@@ -237,13 +230,14 @@ func (v *maxDepthVisitor) Visit(node ast.Node) ast.Visitor {
 			v.Rbrace = n.Rbrace
 		}
 
-		if n.Lbrace > v.Lbrace && n.Rbrace > v.Rbrace {
+		if n.Lbrace > v.Rbrace {
 			v.Depth--
+		} else {
+			v.Depth++
 		}
 
 		v.Lbrace = n.Lbrace
 		v.Rbrace = n.Rbrace
-		v.Depth++
 		v.NodeDepth = append(v.NodeDepth, v.Depth)
 	}
 
